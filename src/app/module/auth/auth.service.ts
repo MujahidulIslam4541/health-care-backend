@@ -227,9 +227,13 @@ const googleLogin = async (payload: googleClientPayload) => {
 	const email = googleTokenPayload.email;
 
 
-	let user = await prisma.user.findFirst({
-		where: { email, role: Role.PATIENT },
+	let user = await prisma.user.findUnique({
+		where: { email },
 	});
+
+	if (user && user.role !== Role.PATIENT) {
+		throw new Error("This email is registered with a different role");
+	}
 
 	if (user) {
 		if (user.status === UserStatus.BLOCKED) {
