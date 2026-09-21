@@ -21,4 +21,9 @@ export default {
 	admin_name: process.env.ADMIN_NAME || "admin",
 	admin_email: process.env.ADMIN_EMAIL || "admin@gmail.com",
 	admin_password: process.env.ADMIN_PASSWORD || "admin123",
+
+	redis_userName:process.env.REDIS_CLIENT_USERNAME!,
+	redis_password:process.env.REDIS_CLIENT_PASSWORD!,
+	redis_host:process.env.REDIS_CLIENT_HOST!,
+	redis_port:process.env.REDIS_CLIENT_PORT!
 };
