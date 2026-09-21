@@ -10,12 +10,15 @@ import { prisma } from "../../lib/prisma";
 import { jwtUtils } from "../../utils/jwt";
 import type {
 	googleClientPayload,
+	IForgotPassword,
 	ILoginUserPayload,
 	IRegisterPatientPayload,
 	IRequestUser,
+	IResetPassword,
 } from "./auth.interface";
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { googleClient } from "../../middleware/googleAuth";
+import crypto from "crypto"
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
 	const { name, password } = payload;
@@ -293,10 +296,37 @@ const googleLogin = async (payload: googleClientPayload) => {
 	return { accessToken, refreshToken };
 };
 
+const forgotPassword = async (payload: IForgotPassword) => {
+	const { email } = payload
+
+	const isExistUser = await prisma.user.findUnique({
+		where: {
+			email
+		}
+	})
+
+	if (!isExistUser || isExistUser.status === "BLOCKED" || isExistUser.isDeleted || isExistUser.status === "DELETED" || isExistUser.authProvider !== "LOCAL") {
+		throw new Error("user not exist or deleted or blocked ")
+	}
+
+	const otp=crypto.randomInt(100000,1000000) 
+	
+
+
+
+}
+
+const resetPassword = async (payload: IResetPassword) => {
+
+}
+
+
 export const AuthService = {
 	registerPatient,
 	loginUser,
 	getMe,
 	refreshToken,
 	googleLogin,
+	forgotPassword,
+	resetPassword
 };
