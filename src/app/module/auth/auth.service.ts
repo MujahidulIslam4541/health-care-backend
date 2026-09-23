@@ -19,6 +19,7 @@ import type {
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { googleClient } from "../../middleware/googleAuth";
 import crypto from "crypto"
+import { redisClient } from "../../lib/redis";
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
 	const { name, password } = payload;
@@ -309,8 +310,16 @@ const forgotPassword = async (payload: IForgotPassword) => {
 		throw new Error("user not exist or deleted or blocked ")
 	}
 
-	const otp=crypto.randomInt(100000,1000000) 
-	
+	const otp = crypto.randomInt(100000, 1000000).toString()
+	const key = `forgot-password-otp:${isExistUser.email}`
+
+	await redisClient.set(key, otp, {
+		expiration: {
+			type: "EX",
+			value: 5 * 60
+		}
+	})
+
 
 
 
