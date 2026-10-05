@@ -20,6 +20,7 @@ import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { googleClient } from "../../middleware/googleAuth";
 import crypto from "crypto"
 import { redisClient } from "../../lib/redis";
+import { error } from "console";
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
 	const { name, password } = payload;
@@ -320,13 +321,36 @@ const forgotPassword = async (payload: IForgotPassword) => {
 		}
 	})
 
-
-
-
 }
 
 const resetPassword = async (payload: IResetPassword) => {
+	const { email, otp, newPassword } = payload
 
+	const isExistUser = await prisma.user.findUnique({
+		where: {
+			email
+		}
+	})
+
+	if (!isExistUser || isExistUser.status === "BLOCKED" || isExistUser.isDeleted || isExistUser.status === "DELETED" || isExistUser.authProvider !== "LOCAL") {
+		throw new Error("user not exist or deleted or blocked ")
+	}
+	const key = `forgot-password-otp:${isExistUser.email}`
+	const redisOtp = await redisClient.get(key)
+
+	if (!redisOtp || redisOtp !== otp) {
+		throw new Error("your otp is not valid ")
+	}
+	const hashedPassword = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds))
+
+	await prisma.user.update({
+		where: { email: isExistUser.email },
+		data: {
+			password: hashedPassword
+		}
+	})
+
+	await redisClient.del([key])
 }
 
 
