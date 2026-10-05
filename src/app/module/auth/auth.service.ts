@@ -141,7 +141,7 @@ const verifyRegistration = async (payload: IVerifiedRegisterPatientPayload) => {
 	await redisClient.del(registrationDataKey)
 
 	const { patient, ...user } = createdUser;
-	
+
 	const jwtPayload = {
 		userId: user.id,
 		name: user.name,
@@ -161,12 +161,26 @@ const verifyRegistration = async (payload: IVerifiedRegisterPatientPayload) => {
 		config.jwt_refresh_expires_in as SignOptions,
 	);
 
+	const filePath = path.join(process.cwd(), "src/app/templates/registration-success.ejs")
+
+	const html = await ejs.renderFile(filePath, { name:user.name, appName: "Health-care"})
+
+	await transporter.sendMail({
+		from: config.smtp_sender,
+		to: email,
+		subject: "your account is successfully created ",
+		html
+	})
+
 	return {
 		user,
 		patient,
 		accessToken,
 		refreshToken,
 	};
+
+
+	
 
 
 
