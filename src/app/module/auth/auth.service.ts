@@ -1,4 +1,6 @@
 import bcrypt from "bcryptjs";
+import path from "path";
+import ejs from "ejs"
 import type { JwtPayload, SignOptions } from "jsonwebtoken";
 import {
 	AuthProvider,
@@ -322,13 +324,15 @@ const forgotPassword = async (payload: IForgotPassword) => {
 		}
 	})
 
-	await transporter.sendMail({ 
-		from: config.smtp_sender, 
-		to: isExistUser.email, 
-		subject:"forgot password otp send",
-		html:`
-		<h1> hello brother kamon acen ${otp}</h1>
-		`
+	const filePath = path.join(process.cwd(), "src/app/templates/forgote-password.ejs")
+
+	const html = await ejs.renderFile(filePath, { otp, name: isExistUser.name, appName: "Health-care", expiresIn: 5 })
+
+	await transporter.sendMail({
+		from: config.smtp_sender,
+		to: isExistUser.email,
+		subject: "forgot password otp send",
+		html
 	})
 
 }
@@ -362,14 +366,24 @@ const resetPassword = async (payload: IResetPassword) => {
 
 	await redisClient.del([key])
 
+	const filePath = path.join(process.cwd(), "src/app/templates/reset-password.ejs")
 
-	await transporter.sendMail({ 
-		from: config.smtp_sender, 
-		to: isExistUser.email, 
-		subject:"your password changed",
-		html:`
-		<h1> hello brother kamon acen</h1>
-		`
+	const html = await ejs.renderFile(filePath, {
+		name:isExistUser.name,
+		appName: "Health Care",
+		supportEmail: config.smtp_sender,
+		changedAt: new Date().toLocaleString("en-GB", {
+			timeZone: "Asia/Dhaka",
+			dateStyle: "medium",
+			timeStyle: "short",
+		}),
+	})
+
+	await transporter.sendMail({
+		from: config.smtp_sender,
+		to: isExistUser.email,
+		subject: "your password changed",
+		html
 	})
 }
 
