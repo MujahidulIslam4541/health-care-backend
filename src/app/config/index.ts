@@ -22,12 +22,16 @@ export default {
 	admin_email: process.env.ADMIN_EMAIL || "admin@gmail.com",
 	admin_password: process.env.ADMIN_PASSWORD || "admin123",
 
-	redis_userName:process.env.REDIS_CLIENT_USERNAME!,
-	redis_password:process.env.REDIS_CLIENT_PASSWORD!,
-	redis_host:process.env.REDIS_CLIENT_HOST!,
-	redis_port:process.env.REDIS_CLIENT_PORT!,
+	redis_userName: process.env.REDIS_CLIENT_USERNAME!,
+	redis_password: process.env.REDIS_CLIENT_PASSWORD!,
+	redis_host: process.env.REDIS_CLIENT_HOST!,
+	redis_port: process.env.REDIS_CLIENT_PORT!,
 
-	smtp_app_password:process.env.SMTP_APP_PASSWORD!,
-	smtp_user:process.env.SMTP_USER!,
-	smtp_sender:process.env.SMTP_SENDER!
+	smtp_app_password: process.env.SMTP_APP_PASSWORD!,
+	smtp_user: process.env.SMTP_USER!,
+	smtp_sender: process.env.SMTP_SENDER!,
+
+	cloudinary_cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+	cloudinary_api_key: process.env.CLOUDINARY_API_KEY,
+	cloudinary_api_secret: process.env.CLOUDINARY_API_SECRET
 };
