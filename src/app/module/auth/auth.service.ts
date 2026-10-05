@@ -21,6 +21,7 @@ import { googleClient } from "../../middleware/googleAuth";
 import crypto from "crypto"
 import { redisClient } from "../../lib/redis";
 import { error } from "console";
+import { transporter } from "../../lib/nodemailer";
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
 	const { name, password } = payload;
@@ -321,6 +322,15 @@ const forgotPassword = async (payload: IForgotPassword) => {
 		}
 	})
 
+	await transporter.sendMail({ 
+		from: config.smtp_sender, 
+		to: isExistUser.email, 
+		subject:"forgot password otp send",
+		html:`
+		<h1> hello brother kamon acen ${otp}</h1>
+		`
+	})
+
 }
 
 const resetPassword = async (payload: IResetPassword) => {
@@ -351,6 +361,16 @@ const resetPassword = async (payload: IResetPassword) => {
 	})
 
 	await redisClient.del([key])
+
+
+	await transporter.sendMail({ 
+		from: config.smtp_sender, 
+		to: isExistUser.email, 
+		subject:"your password changed",
+		html:`
+		<h1> hello brother kamon acen</h1>
+		`
+	})
 }
 
 
