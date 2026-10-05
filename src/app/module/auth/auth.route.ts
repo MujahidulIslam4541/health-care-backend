@@ -13,6 +13,11 @@ router.post(
 	AuthController.registerPatient,
 );
 router.post(
+	"/verify-registration",
+	validateRequest(AuthValidation.registerVerifyPatientValidationSchema),
+	AuthController.verifyRegistration,
+);
+router.post(
 	"/login",
 	validateRequest(AuthValidation.loginUserValidationSchema),
 	AuthController.loginUser,

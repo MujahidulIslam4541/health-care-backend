@@ -17,6 +17,7 @@ import type {
 	IRegisterPatientPayload,
 	IRequestUser,
 	IResetPassword,
+	IVerifiedRegisterPatientPayload,
 } from "./auth.interface";
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { googleClient } from "../../middleware/googleAuth";
@@ -24,7 +25,6 @@ import crypto, { randomBytes } from "crypto"
 import { redisClient } from "../../lib/redis";
 import { error } from "console";
 import { transporter } from "../../lib/nodemailer";
-import { json } from "zod";
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
 	const { name, password } = payload;
@@ -72,54 +72,105 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
 
 	await transporter.sendMail({
 		from: config.smtp_sender,
-		to:email,
+		to: email,
 		subject: "forgot password otp send",
 		html
 	})
 
-	// const createdUser = await prisma.user.create({
-	// 	data: {
-	// 		name,
-	// 		email,
-	// 		password: hashedPassword,
-	// 		role: Role.PATIENT,
-	// 		status: UserStatus.ACTIVE,
-	// 		emailVerified: false,
-	// 		patient: {
-	// 			create: { name, email },
-	// 		},
-	// 	},
-	// 	omit: { password: true },
-	// 	include: { patient: true },
-	// });
-
-	// const { patient, ...user } = createdUser;
-	// const jwtPayload = {
-	// 	userId: user.id,
-	// 	name: user.name,
-	// 	email: user.email,
-	// 	role: user.role,
-	// };
-
-	// const accessToken = jwtUtils.createToken(
-	// 	jwtPayload,
-	// 	config.jwt_access_secret,
-	// 	config.jwt_access_expires_in as SignOptions,
-	// );
-
-	// const refreshToken = jwtUtils.createToken(
-	// 	jwtPayload,
-	// 	config.jwt_refresh_secret,
-	// 	config.jwt_refresh_expires_in as SignOptions,
-	// );
-
-	// return {
-	// 	user,
-	// 	patient,
-	// 	accessToken,
-	// 	refreshToken,
-	// };
 };
+
+const verifyRegistration = async (payload: IVerifiedRegisterPatientPayload) => {
+	const otp = payload.otp
+
+	const email = payload.email.trim().toLowerCase();
+
+	const isExistUser = await prisma.user.findUnique({
+		where: { email },
+	});
+
+	if (isExistUser?.emailVerified) {
+		throw new Error("email already verified");
+	}
+
+
+	if (isExistUser?.status === UserStatus.BLOCKED) {
+		throw new Error("User is blocked");
+	}
+
+	if (isExistUser?.isDeleted || isExistUser?.status === UserStatus.DELETED) {
+		throw new Error("User is deleted");
+	}
+
+
+	const registrationOtpKey = `registration-otp-key:${email}`
+
+	const redisOtp = await redisClient.get(registrationOtpKey)
+
+	if (!redisOtp || redisOtp !== otp) {
+		throw new Error("your otp is not valid ")
+	}
+	await redisClient.del(registrationOtpKey)
+
+	const registrationDataKey = `registration-data-key:${email}`
+
+	const redisPatientData = await redisClient.get(registrationDataKey)
+
+	if (!redisPatientData) {
+		throw new Error("redis data not found")
+	}
+
+	const redisPayload: IRegisterPatientPayload = JSON.parse(redisPatientData)
+
+
+	const createdUser = await prisma.user.create({
+		data: {
+			name: redisPayload.name,
+			email: redisPayload.email,
+			password: redisPayload.password,
+			role: Role.PATIENT,
+			status: UserStatus.ACTIVE,
+			emailVerified: true,
+			patient: {
+				create: { name: redisPayload.name, email: redisPayload.email },
+			},
+		},
+		omit: { password: true },
+		include: { patient: true },
+	});
+
+	await redisClient.del(registrationDataKey)
+
+	const { patient, ...user } = createdUser;
+	
+	const jwtPayload = {
+		userId: user.id,
+		name: user.name,
+		email: user.email,
+		role: user.role,
+	};
+
+	const accessToken = jwtUtils.createToken(
+		jwtPayload,
+		config.jwt_access_secret,
+		config.jwt_access_expires_in as SignOptions,
+	);
+
+	const refreshToken = jwtUtils.createToken(
+		jwtPayload,
+		config.jwt_refresh_secret,
+		config.jwt_refresh_expires_in as SignOptions,
+	);
+
+	return {
+		user,
+		patient,
+		accessToken,
+		refreshToken,
+	};
+
+
+
+}
 
 const loginUser = async (payload: ILoginUserPayload) => {
 	const { password } = payload;
@@ -429,6 +480,7 @@ const resetPassword = async (payload: IResetPassword) => {
 
 export const AuthService = {
 	registerPatient,
+	verifyRegistration,
 	loginUser,
 	getMe,
 	refreshToken,

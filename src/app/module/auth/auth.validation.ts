@@ -20,6 +20,18 @@ const registerPatientValidationSchema = z.object({
 	}),
 });
 
+const registerVerifyPatientValidationSchema = z.object({
+	body: z.object({
+		email: z
+			.string({
+				error: "Email must be a string",
+			})
+			.email("Invalid email address"),
+		otp: z.string({ error: "otp is required" })
+	}),
+});
+
+
 const loginUserValidationSchema = z.object({
 	body: z.object({
 		email: z
@@ -37,6 +49,7 @@ const loginUserValidationSchema = z.object({
 
 export const AuthValidation = {
 	registerPatientValidationSchema,
+	registerVerifyPatientValidationSchema,
 	loginUserValidationSchema,
 };
 
