@@ -20,10 +20,11 @@ import type {
 } from "./auth.interface";
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { googleClient } from "../../middleware/googleAuth";
-import crypto from "crypto"
+import crypto, { randomBytes } from "crypto"
 import { redisClient } from "../../lib/redis";
 import { error } from "console";
 import { transporter } from "../../lib/nodemailer";
+import { json } from "zod";
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
 	const { name, password } = payload;
@@ -39,48 +40,85 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
 
 	const hashedPassword = await bcrypt.hash(password, 8);
 
-	const createdUser = await prisma.user.create({
-		data: {
-			name,
-			email,
-			password: hashedPassword,
-			role: Role.PATIENT,
-			status: UserStatus.ACTIVE,
-			emailVerified: false,
-			patient: {
-				create: { name, email },
-			},
-		},
-		omit: { password: true },
-		include: { patient: true },
-	});
+	const otpExpire = 5 * 60
 
-	const { patient, ...user } = createdUser;
-	const jwtPayload = {
-		userId: user.id,
-		name: user.name,
-		email: user.email,
-		role: user.role,
-	};
+	const registrationOtpKey = `registration-otp-key:${email}`
+	const registrationOtp = await crypto.randomInt(100000, 1000000).toString()
 
-	const accessToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_access_secret,
-		config.jwt_access_expires_in as SignOptions,
-	);
+	await redisClient.set(registrationOtpKey, registrationOtp, {
+		expiration: {
+			type: "EX",
+			value: otpExpire
+		}
+	})
 
-	const refreshToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_refresh_secret,
-		config.jwt_refresh_expires_in as SignOptions,
-	);
+	const registrationDataKey = `registration-data-key:${email}`
+	const redisPatientData = {
+		name,
+		email,
+		password: hashedPassword
+	}
 
-	return {
-		user,
-		patient,
-		accessToken,
-		refreshToken,
-	};
+	await redisClient.set(registrationDataKey, JSON.stringify(redisPatientData), {
+		expiration: {
+			type: "EX",
+			value: otpExpire
+		}
+	})
+
+	const filePath = path.join(process.cwd(), "src/app/templates/registration-otp.ejs")
+
+	const html = await ejs.renderFile(filePath, { otp: registrationOtp, name, appName: "Health-care", expiresIn: 5 })
+
+	await transporter.sendMail({
+		from: config.smtp_sender,
+		to:email,
+		subject: "forgot password otp send",
+		html
+	})
+
+	// const createdUser = await prisma.user.create({
+	// 	data: {
+	// 		name,
+	// 		email,
+	// 		password: hashedPassword,
+	// 		role: Role.PATIENT,
+	// 		status: UserStatus.ACTIVE,
+	// 		emailVerified: false,
+	// 		patient: {
+	// 			create: { name, email },
+	// 		},
+	// 	},
+	// 	omit: { password: true },
+	// 	include: { patient: true },
+	// });
+
+	// const { patient, ...user } = createdUser;
+	// const jwtPayload = {
+	// 	userId: user.id,
+	// 	name: user.name,
+	// 	email: user.email,
+	// 	role: user.role,
+	// };
+
+	// const accessToken = jwtUtils.createToken(
+	// 	jwtPayload,
+	// 	config.jwt_access_secret,
+	// 	config.jwt_access_expires_in as SignOptions,
+	// );
+
+	// const refreshToken = jwtUtils.createToken(
+	// 	jwtPayload,
+	// 	config.jwt_refresh_secret,
+	// 	config.jwt_refresh_expires_in as SignOptions,
+	// );
+
+	// return {
+	// 	user,
+	// 	patient,
+	// 	accessToken,
+	// 	refreshToken,
+	// };
 };
 
 const loginUser = async (payload: ILoginUserPayload) => {
@@ -350,6 +388,7 @@ const resetPassword = async (payload: IResetPassword) => {
 		throw new Error("user not exist or deleted or blocked ")
 	}
 	const key = `forgot-password-otp:${isExistUser.email}`
+
 	const redisOtp = await redisClient.get(key)
 
 	if (!redisOtp || redisOtp !== otp) {
@@ -369,7 +408,7 @@ const resetPassword = async (payload: IResetPassword) => {
 	const filePath = path.join(process.cwd(), "src/app/templates/reset-password.ejs")
 
 	const html = await ejs.renderFile(filePath, {
-		name:isExistUser.name,
+		name: isExistUser.name,
 		appName: "Health Care",
 		supportEmail: config.smtp_sender,
 		changedAt: new Date().toLocaleString("en-GB", {
