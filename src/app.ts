@@ -1,6 +1,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, {
+	NextFunction,
 	type Application,
 	type Request,
 	type Response,
@@ -11,6 +12,7 @@ import config from "./app/config";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { UserRoutes } from "./app/module/user/user.routes";
+import { getBkashIdToken } from "./app/lib/bkash";
 
 const app: Application = express();
 
@@ -38,6 +40,17 @@ app.get("/", async (req: Request, res: Response) => {
 		message: "Welcome to PH Healthcare System Backend",
 	});
 });
+
+// app.get("/test", async (req: Request, res: Response, next: NextFunction) => {
+// 	try {
+// 		const result = await getBkashIdToken();
+// 		console.log("bkash grant id token", result);
+// 		res.status(httpStatus.OK).json({ success: true, data: result });
+// 	} catch (error) {
+// 		console.error("bkash error:", error);
+// 		next(error);
+// 	}
+// });
 
 app.use(globalErrorHandler);
 app.use(notFound);
