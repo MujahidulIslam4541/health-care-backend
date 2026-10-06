@@ -11,13 +11,13 @@ const updateImage = catchAsync(async (req: Request, res: Response) => {
     }
     const userId=req.user?.userId;
 
-     await userService.updateProfileImage(req.file?.buffer,userId as string)
+   const result=  await userService.updateProfileImage(req.file?.buffer,userId as string)
 
     sendResponse(res, {
         statusCode: HttpStatus.CREATED,
         success: true,
         message: "profile image updated",
-        data: null
+        data: result
     });
 });
 
