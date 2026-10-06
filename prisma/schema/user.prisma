@@ -3,6 +3,8 @@ model User {
   name               String
   email              String
   password           String?
+  image_url          String?      @default("https://res.cloudinary.com/bfy3veyt/image/upload/v1791227644/830695668_1104544168603640_4469001578613584969_n.jpg")
+  image_public_id    String?      @default("")
   googleId           String?      @unique()
   authProvider       AuthProvider @default(LOCAL)
   emailVerified      Boolean      @default(false)
