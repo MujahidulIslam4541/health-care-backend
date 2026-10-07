@@ -31,7 +31,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/v1/auth", AuthRoutes);
-app.use("/api/v1/user", UserRoutes)
+app.use("/api/v1/user", UserRoutes);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {
@@ -41,16 +41,16 @@ app.get("/", async (req: Request, res: Response) => {
 	});
 });
 
-// app.get("/test", async (req: Request, res: Response, next: NextFunction) => {
-// 	try {
-// 		const result = await getBkashIdToken();
-// 		console.log("bkash grant id token", result);
-// 		res.status(httpStatus.OK).json({ success: true, data: result });
-// 	} catch (error) {
-// 		console.error("bkash error:", error);
-// 		next(error);
-// 	}
-// });
+app.get("/test", async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const result = await getBkashIdToken();
+		// console.log("bkash grant id token", result);
+		res.status(httpStatus.OK).json({ success: true, data: result });
+	} catch (error) {
+		console.error("bkash error:", error);
+		next(error);
+	}
+});
 
 app.use(globalErrorHandler);
 app.use(notFound);
