@@ -13,6 +13,7 @@ import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { UserRoutes } from "./app/module/user/user.routes";
 import { getBkashIdToken } from "./app/lib/bkash";
+import { AppointmentRoutes } from "./app/module/appointment/appointement.routes";
 
 const app: Application = express();
 
@@ -32,6 +33,7 @@ app.use(cookieParser());
 
 app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/user", UserRoutes);
+app.use("/api/v1/appointment", AppointmentRoutes);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {
