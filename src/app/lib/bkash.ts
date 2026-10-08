@@ -7,7 +7,7 @@ const ID_TOKEN_EX = 60 * 60;
 const REFRESH_TOKEN_EX = 60 * 60 * 24 * 28;
 const THRESHOLD = 600;
 
-const headers = {
+export const headers = {
 	"Content-Type": "application/json",
 	Accept: "application/json",
 	username: config.bkash_user_name,
