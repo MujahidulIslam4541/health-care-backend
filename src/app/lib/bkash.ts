@@ -52,7 +52,7 @@ export const getBkashIdToken = async (): Promise<string> => {
 			redisClient.ttl(REFRESH_TOKEN_KEY),
 		]);
 
-	console.log({ idToken, idTokenTTL, refreshToken, refreshTokenTTL });
+	// console.log({ idToken, idTokenTTL, refreshToken, refreshTokenTTL });
 
 	if (idToken && idTokenTTL > THRESHOLD) {
 		return idToken;
