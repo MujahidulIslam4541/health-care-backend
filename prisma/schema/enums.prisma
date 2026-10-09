@@ -28,3 +28,19 @@ enum AppointmentStatus {
   CANCELLED
   COMPLETED
 }
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentGateway {
+  STRIPE
+  BKASH
+  NAGAD
+  ROCKET
+  CASH
+}
