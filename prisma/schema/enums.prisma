@@ -21,3 +21,10 @@ enum AuthProvider {
   GOOGLE
 }
 
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  ON_GOING
+  CANCELLED
+  COMPLETED
+}
