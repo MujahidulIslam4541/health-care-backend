@@ -17,7 +17,7 @@ model Payment {
     refundTransactionId String?
     refundResponse      String?
     refundAmount        Decimal? @db.Decimal(10, 2)
-    refundAt            String
+    refundAt            String?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

@@ -1,8 +1,8 @@
 model Appointment {
     id              String            @id @default(uuid())
-    patientId       String
-    doctorId        String
-    appointmentDate DateTime
+    // patientId       String
+    // doctorId        String
+    // appointmentDate DateTime
     status          AppointmentStatus @default(PENDING)
     paymentStatus   PaymentStatus     @default(PENDING)
     createdAt       DateTime          @default(now())
@@ -10,7 +10,7 @@ model Appointment {
 
     payment         Payment?          
 
-    @@index([patientId])
-    @@index([doctorId])
+    // @@index([patientId])
+    // @@index([doctorId])
     @@map("appointments")
 }

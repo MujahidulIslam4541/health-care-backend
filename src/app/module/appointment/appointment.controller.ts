@@ -5,7 +5,9 @@ import HttpStatus from "http-status";
 import { AppointmentService } from "./appointment.service";
 
 const createAppointment = catchAsync(async (req: Request, res: Response) => {
-	const result = await AppointmentService.createAppointment();
+	const payload = req.body;
+	const user = req.user!
+	const result = await AppointmentService.createAppointment(payload, user);
 	sendResponse(res, {
 		statusCode: HttpStatus.CREATED,
 		success: true,
@@ -17,7 +19,7 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
 
 const bookAppointmentCallback = catchAsync(async (req: Request, res: Response) => {
 
-	const {executedPaymentResult,redirectUrl} = await AppointmentService.bookAppointmentCallback(req.query);
+	const { executedPaymentResult, redirectUrl } = await AppointmentService.bookAppointmentCallback(req.query);
 
 	res.redirect(redirectUrl)
 
