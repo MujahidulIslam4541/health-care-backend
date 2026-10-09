@@ -8,18 +8,20 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
 	const user = req.user!
 	const result = await AppointmentService.createAppointment(payload, user);
+
+	console.log("result ", result)
 	sendResponse(res, {
 		statusCode: HttpStatus.CREATED,
 		success: true,
 		message: "Bkash payment created ",
-		data: result,
+		data: { bkashURL: result },
 	});
 });
 
 
 const bookAppointmentCallback = catchAsync(async (req: Request, res: Response) => {
 
-	const { executedPaymentResult, redirectUrl } = await AppointmentService.bookAppointmentCallback(req.query);
+	const {  redirectUrl } = await AppointmentService.bookAppointmentCallback(req.query);
 
 	res.redirect(redirectUrl)
 

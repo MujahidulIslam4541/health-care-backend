@@ -5,7 +5,7 @@ model Payment {
     currency              String         @default("BDT")
     paymentGateway        PaymentGateway @default(BKASH)
     
-    paymentId             String?
+    paymentId             String? @unique
     payerReference        String?
     merchantInvoiceNumber String?
     paidAt                String?
