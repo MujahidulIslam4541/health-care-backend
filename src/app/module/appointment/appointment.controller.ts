@@ -18,6 +18,21 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const payAppointment = catchAsync(async (req: Request, res: Response) => {
+	const payload = req.body;
+	const user = req.user!
+	const result = await AppointmentService.payAppointment(payload, user);
+
+	console.log("result ", result)
+	sendResponse(res, {
+		statusCode: HttpStatus.CREATED,
+		success: true,
+		message: "Bkash payment created ",
+		data: { bkashURL: result },
+	});
+});
+
+
 
 const bookAppointmentCallback = catchAsync(async (req: Request, res: Response) => {
 
@@ -34,4 +49,4 @@ const bookAppointmentCallback = catchAsync(async (req: Request, res: Response) =
 	// });
 });
 
-export const AppointmentController = { createAppointment, bookAppointmentCallback };
+export const AppointmentController = { createAppointment, bookAppointmentCallback,payAppointment };

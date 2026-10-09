@@ -63,6 +63,71 @@ const createAppointment = async (payload: string, user: any) => {
 };
 
 
+const payAppointment = async (payload: any, user: any) => {
+    const appointmentId = payload.appointmentId
+
+    const existAppointment = await prisma.appointment.findUnique({
+        where: {
+            id: appointmentId
+        }
+    })
+
+    if (!existAppointment) {
+        throw new Error("Your Appointment dose not found")
+    }
+
+    if (existAppointment.status !== "PENDING") {
+        throw new Error("your appointment status is not pending")
+    }
+
+    // if (existAppointment.status === "COMPLETED" || existAppointment.status === "ON_GOING" || existAppointment.status === "CANCELLED") {
+    //     throw new Error(`your appointment is ${(existAppointment.status).toLocaleLowerCase()}`)
+    // }
+
+
+    // created bkash payment
+    const bkashIdToken = await getBkashIdToken();
+
+    const createBkashPayment = await fetch(
+        `${config.bkash_base_url}/tokenized-checkout/payment/create`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-App-Key": config.bkash_app_key,
+                Authorization: bkashIdToken,
+            },
+            body: JSON.stringify({
+                payerReference: user.email,
+                callbackURL: `${config.bkash_callBack_url}/appointment/book-appointment/payment/callback`,
+                amount: "2000",
+                currency: "BDT",
+                intent: "sale",
+                merchantInvoiceNumber: existAppointment.id,
+                subMerchantName: "Test",
+                merchantAssociationInfo: "MI05MID54RF09123456789",
+            }),
+        },
+    );
+    const bkashPaymentResult = await createBkashPayment.json();
+
+
+    await prisma.payment.update({
+        where: {
+            appointmentId: existAppointment.id
+        },
+        data: {
+            appointmentId: existAppointment.id,
+            getWayResponse: bkashPaymentResult,
+            paymentId: bkashPaymentResult.paymentId,
+            merchantInvoiceNumber: bkashPaymentResult.merchantInvoiceNumber,
+        }
+    })
+
+    return bkashPaymentResult.bkashURL;
+
+}
+
 
 
 const bookAppointmentCallback = async (query: any) => {
@@ -76,7 +141,7 @@ const bookAppointmentCallback = async (query: any) => {
     const redirect = (s: string) =>
         `${config.frontend_url}/dashboard/book-appointment?status=${s}`
 
-  
+
     const payment = await prisma.payment.findUnique({
         where: { paymentId },
     })
@@ -85,7 +150,7 @@ const bookAppointmentCallback = async (query: any) => {
         throw new Error("payment record not found")
     }
 
-    
+
     if (status === "failure" || status === "cancel") {
         await prisma.payment.update({
             where: { paymentId },
@@ -104,7 +169,7 @@ const bookAppointmentCallback = async (query: any) => {
         return { redirectUrl: redirect("failure") }
     }
 
-   
+
     const bkashIdToken = await getBkashIdToken()
 
     const executeRes = await fetch(
@@ -122,9 +187,9 @@ const bookAppointmentCallback = async (query: any) => {
 
     const executed = await executeRes.json()
 
-    
+
     const isPaid =
-        executed.transactionStatus === "Completed" 
+        executed.transactionStatus === "Completed"
 
     if (!isPaid) {
         await prisma.payment.update({
@@ -138,7 +203,7 @@ const bookAppointmentCallback = async (query: any) => {
         return { redirectUrl: redirect("failure") }
     }
 
-   
+
     await prisma.$transaction(async (tx) => {
         await tx.appointment.update({
             where: { id: payment.appointmentId },
@@ -159,4 +224,4 @@ const bookAppointmentCallback = async (query: any) => {
     return { redirectUrl: redirect("success") }
 }
 
-export const AppointmentService = { createAppointment, bookAppointmentCallback };
+export const AppointmentService = { createAppointment, bookAppointmentCallback ,payAppointment};
