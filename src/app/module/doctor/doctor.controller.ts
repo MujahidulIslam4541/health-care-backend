@@ -7,14 +7,17 @@ import { DoctorService } from "./doctor.service";
 
 const applyDoctor = catchAsync(async (req: Request, res: Response) => {
     const payload = req.body;
+    const files = req.files
 
-    const result = await DoctorService.applyDoctor(payload)
+    console.log(payload.data, files)
+
+    // const result = await DoctorService.applyDoctor(payload)
 
     sendResponse(res, {
         statusCode: HttpStatus.CREATED,
         success: true,
         message: "doctor apply success please wait for admin verification",
-        data: result
+        data: null
     });
 });
 
