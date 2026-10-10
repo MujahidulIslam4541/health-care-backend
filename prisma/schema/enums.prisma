@@ -45,3 +45,9 @@ enum PaymentGateway {
   ROCKET
   CASH
 }
+
+enum DoctorVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
