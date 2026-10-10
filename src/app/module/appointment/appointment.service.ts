@@ -224,7 +224,7 @@ const bookAppointmentCallback = async (query: any) => {
     return { redirectUrl: redirect("success") }
 }
 
-const cancelAppointment = async (payload: any, user: any) => {
+const cancelAppointment = async (payload: any) => {
     const transaction = await prisma.$transaction(async (tx) => {
         const appointmentId = payload.appointmentId
         const reason = payload.reason;
@@ -279,6 +279,7 @@ const cancelAppointment = async (payload: any, user: any) => {
                     refundAmount: existAppointment.payment?.amount,
                     trxId: existAppointment.payment?.transactionId,
                     reason: reason,
+                    sku: "appointment cancellation"
                 }),
             },
         );
@@ -286,13 +287,15 @@ const cancelAppointment = async (payload: any, user: any) => {
 
         const refundPayment = await tx.payment.update({
             where: {
-                id: existAppointment.id
+                id: existAppointment.payment?.id
             },
             data: {
                 refundAmount: bkashRefundResult.refundAmount,
                 refundTransactionId: bkashRefundResult.refundTrxId,
                 refundAt: bkashRefundResult.completedTime,
-                refundResponse: bkashRefundResult.reason
+                refundResponse: bkashRefundResult.reason,
+                paymentStatus: PaymentStatus.REFUNDED,
+                getWayResponse: bkashRefundResult
             }
         })
 
@@ -307,4 +310,4 @@ const cancelAppointment = async (payload: any, user: any) => {
 
 }
 
-export const AppointmentService = { createAppointment, bookAppointmentCallback, payAppointment ,cancelAppointment};
+export const AppointmentService = { createAppointment, bookAppointmentCallback, payAppointment, cancelAppointment };

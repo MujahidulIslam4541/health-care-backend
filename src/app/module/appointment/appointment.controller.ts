@@ -39,14 +39,19 @@ const bookAppointmentCallback = catchAsync(async (req: Request, res: Response) =
 	const {  redirectUrl } = await AppointmentService.bookAppointmentCallback(req.query);
 
 	res.redirect(redirectUrl)
-
-	// console.log("payment exicute response", result)
-	// sendResponse(res, {
-	// 	statusCode: HttpStatus.CREATED,
-	// 	success: true,
-	// 	message: "Bkash payment callback redirect success",
-	// 	data: result,
-	// });
 });
 
-export const AppointmentController = { createAppointment, bookAppointmentCallback,payAppointment };
+const cancelAppointment = catchAsync(async (req: Request, res: Response) => {
+	const payload = req.body;
+	const result = await AppointmentService.cancelAppointment(payload);
+
+	// console.log("result ", result)
+	sendResponse(res, {
+		statusCode: HttpStatus.CREATED,
+		success: true,
+		message: "Bkash payment created ",
+		data: {  result },
+	});
+});
+
+export const AppointmentController = { createAppointment, bookAppointmentCallback,payAppointment ,cancelAppointment};
