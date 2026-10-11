@@ -15,5 +15,7 @@ router.post("/apply-doctor", upload.fields([
         name: "additionalFiles",
         maxCount: 10
     }
-]),  DoctorController.applyDoctor)
+]), DoctorController.applyDoctor)
+
+router.post("/verify-doctor", auth(Role.DOCTOR), DoctorController.verifiedDoctor)
 export const DoctorRoutes = router;

@@ -180,10 +180,6 @@ const verifyRegistration = async (payload: IVerifiedRegisterPatientPayload) => {
 	};
 
 
-	
-
-
-
 }
 
 const loginUser = async (payload: ILoginUserPayload) => {
