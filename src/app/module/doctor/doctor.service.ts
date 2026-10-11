@@ -4,7 +4,7 @@ import {
     uploadMultipleToCloudinary,
     deleteFromCloudinary,
 } from "../../lib/cloudinaryHelper";
-import { Role } from "../../../generated/prisma/enums";
+import { DoctorVerificationStatus, Role } from "../../../generated/prisma/enums";
 import bcrypt from "bcryptjs";
 import config from "../../config";
 import crypto from "crypto"
@@ -140,4 +140,71 @@ const verifiedDoctor = async (payload: any) => {
     return verifiedDoctor
 }
 
-export const DoctorService = { applyDoctor ,verifiedDoctor};
+const approvedDoctor = async (payload: any, user: any) => {
+    const { doctorId, verificationStatus, rejectionResean } = payload;
+
+    const existingDoctor = await prisma.doctor.findUnique({
+        where: {
+            id: doctorId
+        }, include: { user: true }
+    })
+
+    if (!existingDoctor) {
+        throw new Error("Doctor application not found ")
+    }
+    if (existingDoctor.user.status === "DELETED") {
+        throw new Error("doctor verification status already deleted")
+    }
+    if (!existingDoctor.user?.emailVerified) {
+        throw new Error("doctor email is not verified please wait for doctor email verification")
+    }
+
+    if (existingDoctor.status !== DoctorVerificationStatus.PENDING) {
+        throw new Error(`Doctor status already has been ${existingDoctor.status}`)
+    }
+
+    if (verificationStatus === DoctorVerificationStatus.REJECTED && !rejectionResean) {
+        throw new Error("rejection reason is required .")
+    }
+
+    const updateDoctorStatus = await prisma.doctor.update({
+        where: { id: existingDoctor.id },
+        data: {
+            status: verificationStatus,
+            rejectionReason: verificationStatus === DoctorVerificationStatus.REJECTED ? rejectionResean : null,
+            reviewedBy: user.id,
+            reviewedAt: new Date()
+        }
+    })
+
+    const isApproved = verificationStatus === DoctorVerificationStatus.VERIFIED;
+
+    const templatesPath = path.join(
+        process.cwd(),
+        `src/app/templates/${isApproved ? "doctor-approved.ejs" : "doctor-reject.ejs"}`
+    );
+    const templatesData = {
+        name: updateDoctorStatus.name,
+        rejectionReason: updateDoctorStatus.rejectionReason
+    }
+
+    const html = await ejs.renderFile(templatesPath, templatesData)
+
+    await transporter.sendMail({
+        from: config.smtp_sender,
+        to: updateDoctorStatus.email,
+        subject: isApproved ? "Your Application has been verified" : "Your Application has been Reject",
+        html
+    })
+
+
+    return updateDoctorStatus;
+
+}
+
+const getAllDoctors = async () => {
+    const response = await prisma.doctor.findMany()
+    return response
+}
+
+export const DoctorService = { applyDoctor, verifiedDoctor, approvedDoctor,getAllDoctors };

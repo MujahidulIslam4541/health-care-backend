@@ -18,4 +18,10 @@ router.post("/apply-doctor", upload.fields([
 ]), DoctorController.applyDoctor)
 
 router.post("/verify-doctor", auth(Role.DOCTOR), DoctorController.verifiedDoctor)
+
+router.patch("/approved-doctor", auth(Role.ADMIN, Role.SUPER_ADMIN), DoctorController.approvedDoctor)
+
+
+router.patch("/get-doctors", auth(Role.ADMIN, Role.SUPER_ADMIN), DoctorController.getAllDoctors)
+
 export const DoctorRoutes = router;

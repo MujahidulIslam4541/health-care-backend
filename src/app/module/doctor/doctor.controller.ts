@@ -42,4 +42,31 @@ const verifiedDoctor = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-export const DoctorController = { applyDoctor ,verifiedDoctor};
+const approvedDoctor = catchAsync(async (req: Request, res: Response) => {
+
+    const payload = req.body
+    const user = req.user
+    const result = await DoctorService.approvedDoctor(
+        payload, user
+    );
+
+    sendResponse(res, {
+        statusCode: HttpStatus.CREATED,
+        success: true,
+        message: "doctor verification success",
+        data: result,
+    });
+});
+
+const getAllDoctors = catchAsync(async (req: Request, res: Response) => {
+    const result = await DoctorService.getAllDoctors()
+
+    sendResponse(res, {
+        statusCode: HttpStatus.CREATED,
+        success: true,
+        message: "Retrieve All Doctors",
+        data: result,
+    });
+})
+
+export const DoctorController = { applyDoctor, verifiedDoctor, approvedDoctor,getAllDoctors };
